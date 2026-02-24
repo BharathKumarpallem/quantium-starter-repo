@@ -1,29 +1,32 @@
 import pandas as pd
-import glob
-
-# read all csv files from data folder
+df = pd.read_csv("formatted_sales.csv")
+print(df.head())
 files = glob.glob("data/*.csv")
 
-dataframes = []
+all_data = []
 
 for file in files:
     df = pd.read_csv(file)
 
-    # keep only pink morsel
+    # keep pink morsel only
     df = df[df["product"] == "pink morsel"]
 
-    # calculate sales
+    # ✅ REMOVE $
+    df["price"] = df["price"].replace('[\$,]', '', regex=True).astype(float)
+
+    # calculate numeric sales
     df["Sales"] = df["quantity"] * df["price"]
 
-    # keep required columns
-    df = df[["Sales", "date", "region"]]
+    all_data.append(df[["Sales", "date", "region"]])
 
-    dataframes.append(df)
+combined = pd.concat(all_data)
 
-# combine all datasets
-final_df = pd.concat(dataframes)
+# daily totals
+daily_sales = (
+    combined.groupby(["date", "region"], as_index=False)["Sales"]
+    .sum()
+)
 
-# save output
-final_df.to_csv("formatted_sales.csv", index=False)
+daily_sales.to_csv("formatted_sales.csv", index=False)
 
-print("Data processing completed ✅")
+print("✅ Correct formatted data created")
